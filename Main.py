@@ -5,6 +5,8 @@ from copy import deepcopy
 
 from TFIDF_Calculation import *
 
+from LDA_Modelling import *
+
 
 def get_gannt_documents():
     """ Description:Get documents information from GANNT system
@@ -111,9 +113,17 @@ def main():
             file.write(source + "," + target + "\n")
 
         threshold += 0.05
-
         file.close()
 
+
+    # just testing LDA
+    initialize()
+    gannt_doc_dict, source_doc_names, target_doc_names = get_gannt_documents()
+    print(gannt_doc_dict.keys())
+    print(source_doc_names)
+    print(target_doc_names)
+    bow_corpus, dictionary = tokenize_lemmatize_docs(gannt_doc_dict)
+    LDA_tfidf(bow_corpus, dictionary)
 
 if __name__ == '__main__':
     main()
