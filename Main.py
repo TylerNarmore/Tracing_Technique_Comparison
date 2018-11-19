@@ -98,12 +98,12 @@ def main():
     threshold_links = {}
 
     # Location where csv files with the links are stored
-    location = "GANNT_Answers/VSM/"
+    vsm_location = "GANNT_Answers/VSM/"
 
     # Runs the TF_IDF calculations incrementing the threshold by 0.05 each iteration.
     # Stores the found links in a CSV file names at the threshold value * 100
     while threshold <= 0.40:
-        file = open(location+str("{0:.2f}".format(threshold))[2:]+".csv", "w")
+        file = open(vsm_location+str("{0:.2f}".format(threshold))[2:]+".csv", "w")
 
         valid_links = find_links(threshold)
         threshold_links[threshold] = valid_links
@@ -115,7 +115,7 @@ def main():
         threshold += 0.05
         file.close()
 
-
+    lda_location = "GANNT_Answers/LDA/"
     # just testing LDA
     initialize()
     gannt_doc_dict, source_doc_names, target_doc_names = get_gannt_documents()
@@ -123,7 +123,23 @@ def main():
     print(source_doc_names)
     print(target_doc_names)
     bow_corpus, dictionary = tokenize_lemmatize_docs(gannt_doc_dict)
-    LDA_tfidf(bow_corpus, dictionary)
+    lda_scores = calculate_LDA_scores(bow_corpus, dictionary)
+    threshold = 0.05
+    while threshold <= 0.80:
+        file = open(lda_location + str("{0:.2f}".format(threshold))[2:] + ".csv", "w")
+
+        valid_links = find_links(threshold)
+        threshold_links[threshold] = valid_links
+        print("******* Threshold = ", "{0:.2f}".format(threshold), " *******", sep='')
+        for source_index in range(17):
+            for target_index in range(17, 86):
+                score = lda_scores[source_index, target_index]
+                if score > threshold:
+                    file.write(gannt_doc_dict[source_index]["Name"] + "," + gannt_doc_dict[target_index]["Name"] + "\n")
+
+        threshold += 0.05
+        file.close()
+
 
 if __name__ == '__main__':
     main()

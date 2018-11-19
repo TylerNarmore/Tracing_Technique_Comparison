@@ -18,6 +18,7 @@ def initialize():
     global stemmer
     stemmer = SnowballStemmer("english")
 
+
 def lemmatize_stemming(text):
     return stemmer.stem(WordNetLemmatizer().lemmatize(text, pos='v'))
 
@@ -28,6 +29,7 @@ def preprocess(text):
         if token not in gensim.parsing.preprocessing.STOPWORDS and len(token) > 3:
             result.append(lemmatize_stemming(token))
     return result
+
 
 def tokenize_lemmatize_docs(doc_dict):
     gannt_word_dict = {}
@@ -41,23 +43,23 @@ def tokenize_lemmatize_docs(doc_dict):
     dictionary = gensim.corpora.Dictionary(processed_docs)
 
     count = 0
-    for k, v in dictionary.iteritems():
-        print(k, v)
-        count += 1
+    # for k, v in dictionary.iteritems():
+    #     print(k, v)
+    #     count += 1
 
     dictionary.filter_extremes(no_below=15, no_above=0.5, keep_n=100000)
     bow_corpus = [dictionary.doc2bow(doc) for doc in processed_docs]
 
-    for j in range(len(bow_corpus)):
-        for i in range(len(bow_corpus[j])):
-            print("Word {} (\"{}\") appears {} time.".format(bow_corpus[j][i][0],
-                                                             dictionary[bow_corpus[j][i][0]],
-                                                             bow_corpus[j][i][1]))
+    # for j in range(len(bow_corpus)):
+    #     for i in range(len(bow_corpus[j])):
+    #         print("Word {} (\"{}\") appears {} time.".format(bow_corpus[j][i][0],
+    #                                                          dictionary[bow_corpus[j][i][0]],
+    #                                                          bow_corpus[j][i][1]))
     return bow_corpus, dictionary
 
 
-#This gets to the matrix with the results, not sure if they are accurate though
-def LDA_tfidf(bow_corpus, dictionary):
+# This gets to the matrix with the results, not sure if they are accurate though
+def calculate_LDA_scores(bow_corpus, dictionary):
     tfidf = models.TfidfModel(bow_corpus)
     corpus_tfidf = tfidf[bow_corpus]
 
@@ -68,34 +70,12 @@ def LDA_tfidf(bow_corpus, dictionary):
     bow_corpus_ent = log_ent[bow_corpus]
 
     # Running LDA using Bag of Words
-    lda_model = gensim.models.LdaMulticore(bow_corpus, num_topics=200, id2word=dictionary, passes=2, workers=2)
-    corpus_lda = lda_model[bow_corpus]
+    lda_model = gensim.models.LdaMulticore(bow_corpus_ent, num_topics=200, id2word=dictionary, passes=2, workers=2)
+    corpus_lda = lda_model[log_ent[bow_corpus]]
 
     res = np.zeros((len(bow_corpus), len(bow_corpus)))
     for i, par1 in enumerate(corpus_lda):
         for j, par2 in enumerate(corpus_lda):
             res[i, j] = cossim(par1, par2)
-    test = res.tolist()
-    count = 0
-    print("\t", end="")
-    for i in range(len(test)):
-        print(" %02d  " % (i,), end="", sep="")
-    print()
-    for i in test:
-        count1 = 0
 
-        print(count, end='\t')
-        count += 1
-        for j in i:
-            print("{0:.2f}".format(j), end=" ")
-            count1+=1
-        print()
-    print(count, count1)
-    # for idx, topic in lda_model.print_topics(-1):
-    #     print('Topic: {} \nWords: {}'.format(idx, topic))
-    #
-    # # running LDA using TF-IDF
-    # lda_model_tfidf = gensim.models.LdaMulticore(corpus_tfidf, num_topics=10, id2word=dictionary, passes=2, workers=4)
-    #
-    # for idx, topic in lda_model_tfidf.print_topics(-1):
-    #     print('Topic: {} Word: {}'.format(idx, topic))
+    return res
