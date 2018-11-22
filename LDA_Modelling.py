@@ -1,15 +1,10 @@
 import gensim
-from gensim.utils import simple_preprocess
-from gensim.parsing.preprocessing import STOPWORDS
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
-from nltk.stem.porter import *
 import numpy as np
 import nltk
-from gensim import corpora, models
-from pprint import pprint
-
+from gensim import models
 from gensim.matutils import cossim
-from gensim import matutils
+from pprint import pprint
 
 def initialize():
     np.random.seed(2018)
@@ -42,12 +37,12 @@ def tokenize_lemmatize_docs(doc_dict):
 
     dictionary = gensim.corpora.Dictionary(processed_docs)
 
-    count = 0
+    # count = 0
     # for k, v in dictionary.iteritems():
     #     print(k, v)
     #     count += 1
 
-    dictionary.filter_extremes(no_below=15, no_above=0.5, keep_n=100000)
+    dictionary.filter_extremes(no_below=15, no_above=0.90, keep_n=100000)
     bow_corpus = [dictionary.doc2bow(doc) for doc in processed_docs]
 
     # for j in range(len(bow_corpus)):
@@ -73,9 +68,14 @@ def calculate_LDA_scores(bow_corpus, dictionary):
     lda_model = gensim.models.LdaMulticore(bow_corpus_ent, num_topics=200, id2word=dictionary, passes=2, workers=2)
     corpus_lda = lda_model[log_ent[bow_corpus]]
 
+    print(lda_model)
+
     res = np.zeros((len(bow_corpus), len(bow_corpus)))
     for i, par1 in enumerate(corpus_lda):
         for j, par2 in enumerate(corpus_lda):
+
             res[i, j] = cossim(par1, par2)
+            #print("%0.3f"%res[i,j], end=' ')
+        #print()
 
     return res

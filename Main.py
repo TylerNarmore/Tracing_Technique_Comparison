@@ -6,6 +6,7 @@ from copy import deepcopy
 from TFIDF_Calculation import *
 
 from LDA_Modelling import *
+from Corpus import Document, Corpus
 
 
 def get_gannt_documents():
@@ -25,7 +26,7 @@ def get_gannt_documents():
     source_doc_names = []
     # Gets a list of the source document file names
     source_file_names = [f for f in listdir(source_file_directory) if isfile(join(source_file_directory, f))]
-
+    source_file_names.sort()
     # Iterates through the source document files and stores it's contents and names in document dictionary
     # Dictionary's key is an id number that increments with each document.
     for fileName in source_file_names:
@@ -39,9 +40,11 @@ def get_gannt_documents():
     target_file_directory = 'GANNT/low/'
     # Gets a list of the target document file names
     target_file_names = [f for f in listdir(target_file_directory) if isfile(join(target_file_directory, f))]
-
+    target_file_names.sort()
     # Iterates through the target document files and stores it's contents and names in document dictionary
     # Dictionary's key is an id number that increments with each document.
+
+
     for fileName in target_file_names:
         doc_name = fileName.rstrip('.txt')
         target_doc_names.append(doc_name)
@@ -91,6 +94,39 @@ def find_links(threshold):
     return valid_links
 
 
+def create_gannt_corpus_obj():
+    corpus = Corpus()
+    doc_id = 0
+
+    source_file_directory = 'GANNT/high/'
+    target_file_directory = 'GANNT/low/'
+
+    # Gets a list of the source document file names and sort by ID number
+    source_file_names = [f for f in listdir(source_file_directory) if isfile(join(source_file_directory, f))]
+    source_file_names.sort()
+
+    # Iterates through the source document files and stores it's contents and names in document dictionary
+    # Dictionary's key is an id number that increments with each document.
+    for fileName in source_file_names:
+        doc_name = fileName.rstrip('.txt')
+        temp_document = Document(doc_id, doc_name, open(source_file_directory+fileName, 'r').read().rstrip("\n"))
+        corpus.add_source_doc(temp_document)
+        doc_id += 1
+
+    # Gets a list of the target document file names and sort by ID number
+    target_file_names = [f for f in listdir(target_file_directory) if isfile(join(target_file_directory, f))]
+    target_file_names.sort()
+
+    # Get and add to
+    for fileName in target_file_names:
+        doc_name = fileName.rstrip('.txt')
+        temp_document = Document(doc_id, doc_name, open(target_file_directory+fileName, 'r').read().rstrip("\n"))
+        corpus.add_target_document(temp_document)
+        doc_id += 1
+
+    return corpus
+
+
 def main():
 
     threshold = 0.05
@@ -99,15 +135,16 @@ def main():
 
     # Location where csv files with the links are stored
     vsm_location = "GANNT_Answers/VSM/"
+    corpus = create_gannt_corpus_obj()
 
     # Runs the TF_IDF calculations incrementing the threshold by 0.05 each iteration.
     # Stores the found links in a CSV file names at the threshold value * 100
-    while threshold <= 0.40:
+    while threshold <= 1:
         file = open(vsm_location+str("{0:.2f}".format(threshold))[2:]+".csv", "w")
 
         valid_links = find_links(threshold)
         threshold_links[threshold] = valid_links
-        # print("******* Threshold = ", "{0:.2f}".format(threshold), " *******", sep='')
+        print("******* Threshold = ", "{0:.2f}".format(threshold), " *******", sep='')
         for link in valid_links:
             source, target = link
             file.write(source + "," + target + "\n")
@@ -119,18 +156,17 @@ def main():
     # just testing LDA
     initialize()
     gannt_doc_dict, source_doc_names, target_doc_names = get_gannt_documents()
-    print(gannt_doc_dict.keys())
-    print(source_doc_names)
-    print(target_doc_names)
+    for i in gannt_doc_dict:
+        print(i, gannt_doc_dict[i])
     bow_corpus, dictionary = tokenize_lemmatize_docs(gannt_doc_dict)
     lda_scores = calculate_LDA_scores(bow_corpus, dictionary)
     threshold = 0.05
-    while threshold <= 0.80:
+    while threshold <= 1:
         file = open(lda_location + str("{0:.2f}".format(threshold))[2:] + ".csv", "w")
 
         valid_links = find_links(threshold)
         threshold_links[threshold] = valid_links
-        print("******* Threshold = ", "{0:.2f}".format(threshold), " *******", sep='')
+        #print("******* Threshold = ", "{0:.2f}".format(threshold), " *******", sep='')
         for source_index in range(17):
             for target_index in range(17, 86):
                 score = lda_scores[source_index, target_index]
