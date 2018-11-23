@@ -39,7 +39,7 @@ actual = extract_actual_results_pairs("GANNT/answer_req_req.xml")
 i = 0.05
 while i < 1:
     file_name = ("%0.2f"%i)[2:]+".csv"
-    tool = extract_tool_results_pairs("GANNT_Answers/VSM/" + file_name)
+    tool = extract_tool_results_pairs("GANNT_Answers/LDA/" + file_name)
     precision, recall = get_precision_and_recall(actual, tool)
     print(file_name[:2], "\tPrecision\t%0.4f\t\t"%precision, "Recall\t\t%0.4f"%recall, sep="")
     i += .05

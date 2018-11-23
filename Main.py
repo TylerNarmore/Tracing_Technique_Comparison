@@ -135,46 +135,71 @@ def main():
 
     # Location where csv files with the links are stored
     vsm_location = "GANNT_Answers/VSM/"
+    lda_location = "GANNT_Answers/LDA/"
     corpus = create_gannt_corpus_obj()
+    corpus.vsm_generate_dict_and_corpus()
+    corpus.run_vsm()
+    corpus.run_lda()
 
-    # Runs the TF_IDF calculations incrementing the threshold by 0.05 each iteration.
-    # Stores the found links in a CSV file names at the threshold value * 100
+    # # Runs the TF_IDF calculations incrementing the threshold by 0.05 each iteration.
+    # # Stores the found links in a CSV file names at the threshold value * 100
     while threshold <= 1:
         file = open(vsm_location+str("{0:.2f}".format(threshold))[2:]+".csv", "w")
 
         valid_links = find_links(threshold)
         threshold_links[threshold] = valid_links
         print("******* Threshold = ", "{0:.2f}".format(threshold), " *******", sep='')
-        for link in valid_links:
-            source, target = link
-            file.write(source + "," + target + "\n")
+        for source in corpus.source_documents:
+            index = 0
+            for score in source.vsm_results:
+                if score > threshold:
+                    file.write(source.document_name + "," + corpus.target_documents[index].document_name + "\n")
+                index += 1
 
         threshold += 0.05
         file.close()
 
-    lda_location = "GANNT_Answers/LDA/"
-    # just testing LDA
-    initialize()
-    gannt_doc_dict, source_doc_names, target_doc_names = get_gannt_documents()
-    for i in gannt_doc_dict:
-        print(i, gannt_doc_dict[i])
-    bow_corpus, dictionary = tokenize_lemmatize_docs(gannt_doc_dict)
-    lda_scores = calculate_LDA_scores(bow_corpus, dictionary)
-    threshold = 0.05
+    threshold = 0
     while threshold <= 1:
-        file = open(lda_location + str("{0:.2f}".format(threshold))[2:] + ".csv", "w")
+        file = open(lda_location+str("{0:.2f}".format(threshold))[2:]+".csv", "w")
 
         valid_links = find_links(threshold)
         threshold_links[threshold] = valid_links
-        #print("******* Threshold = ", "{0:.2f}".format(threshold), " *******", sep='')
-        for source_index in range(17):
-            for target_index in range(17, 86):
-                score = lda_scores[source_index, target_index]
+        print("******* Threshold = ", "{0:.2f}".format(threshold), " *******", sep='')
+        for source in corpus.source_documents:
+            index = 0
+            for score in source.lda_results:
+                print(score, source.document_name + "," + corpus.target_documents[index].document_name)
                 if score > threshold:
-                    file.write(gannt_doc_dict[source_index]["Name"] + "," + gannt_doc_dict[target_index]["Name"] + "\n")
+                    file.write(source.document_name + "," + corpus.target_documents[index].document_name + "\n")
+                index += 1
 
         threshold += 0.05
         file.close()
+
+
+    # # just testing LDA
+    # initialize()
+    # gannt_doc_dict, source_doc_names, target_doc_names = get_gannt_documents()
+    # for i in gannt_doc_dict:
+    #     print(i, gannt_doc_dict[i])
+    # bow_corpus, dictionary = tokenize_lemmatize_docs(gannt_doc_dict)
+    # lda_scores = calculate_LDA_scores(bow_corpus, dictionary)
+    # threshold = 0.05
+    # while threshold <= 1:
+    #     file = open(lda_location + str("{0:.2f}".format(threshold))[2:] + ".csv", "w")
+    #
+    #     valid_links = find_links(threshold)
+    #     threshold_links[threshold] = valid_links
+    #     #print("******* Threshold = ", "{0:.2f}".format(threshold), " *******", sep='')
+    #     for source_index in range(17):
+    #         for target_index in range(17, 86):
+    #             score = lda_scores[source_index, target_index]
+    #             if score > threshold:
+    #                 file.write(gannt_doc_dict[source_index]["Name"] + "," + gannt_doc_dict[target_index]["Name"] + "\n")
+    #
+    #     threshold += 0.05
+    #     file.close()
 
 
 if __name__ == '__main__':
